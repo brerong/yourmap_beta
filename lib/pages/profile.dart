@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:yourmap/pages/changepassword.dart';
 import 'package:yourmap/pages/login.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -101,7 +102,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             alignment: Alignment.centerRight,
             child: TextButton(
               onPressed: () {
-                Navigator.pushNamed(context, '/changePassword');
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ChangePasswordPage(),
+                  ),
+                );
               },
               child: const Text(
                 "Change Password",

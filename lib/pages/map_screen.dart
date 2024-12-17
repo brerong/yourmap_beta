@@ -7,6 +7,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:flutter_compass/flutter_compass.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
+import 'package:yourmap/pages/editmarker.dart';
 import 'package:yourmap/utils/marker_data.dart';
 
 class MapScreen extends StatefulWidget {
@@ -14,6 +15,7 @@ class MapScreen extends StatefulWidget {
 
   @override
   State<MapScreen> createState() => _MapScreenState();
+
 }
 
 class _MapScreenState extends State<MapScreen> {
@@ -68,58 +70,58 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _addMarker(LatLng position, String title, String description) async {
-    setState(() {
-      final markerData = MarkerData(
-        position: position,
-        title: title,
-        description: description,
-      );
-      _markerData.add(markerData);
-      _markers.add(
-        Marker(
-          point: position,
-          width: 80,
-          height: 80,
-          child: GestureDetector(
-            onTap: () => _showMarkerInfo(markerData),
-            child: Column(
-              children: [
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(4),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 4,
-                        offset: Offset(0, 2),
+    String? documentId = await _saveMarker(position, title, description);
+
+    if (documentId != null) {
+      setState(() {
+        final markerData = MarkerData(
+          position: position,
+          title: title,
+          description: description,
+        );
+        _markerData.add(markerData);
+        _markers.add(
+          Marker(
+            point: position,
+            width: 80,
+            height: 80,
+            child: GestureDetector(
+              onTap: () => _showMarkerInfo(markerData, documentId),
+              child: Column(
+                children: [
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(4),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 4,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      title,
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontWeight: FontWeight.bold,
                       ),
-                    ],
-                  ),
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                ),
-                Icon(
-                  Icons.location_on,
-                  color: Colors.redAccent,
-                  size: 40,
-                ),
-              ],
+                  Icon(
+                    Icons.location_on,
+                    color: Colors.redAccent,
+                    size: 40,
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-      );
-    });
-    await _saveMarker(position, title, description);
+        );
+      });
+    }
   }
 
   void _showMarkerDialog(BuildContext context, LatLng position) {
@@ -241,7 +243,7 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  void _showMarkerInfo(MarkerData markerData) {
+  void _showMarkerInfo(MarkerData markerData, String documentId) {
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -257,14 +259,12 @@ class _MapScreenState extends State<MapScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Icon Location
               const Icon(
                 Icons.location_on,
                 size: 60,
                 color: Colors.redAccent,
               ),
               const SizedBox(height: 10),
-              // Title
               Text(
                 markerData.title,
                 style: const TextStyle(
@@ -274,7 +274,6 @@ class _MapScreenState extends State<MapScreen> {
                 ),
               ),
               const SizedBox(height: 10),
-              // Description
               Text(
                 markerData.description,
                 textAlign: TextAlign.center,
@@ -284,30 +283,50 @@ class _MapScreenState extends State<MapScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-              // Close Button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.redAccent,
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 12,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blueAccent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                    onPressed: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => EditMarkerPage(
+                            documentId: documentId,
+                            initialTitle: markerData.title,
+                            initialDescription: markerData.description,
+                          ),
+                        ),
+                      );
+                    },
+                    child: const Text(
+                      "Edit",
+                      style: TextStyle(color: Colors.white),
                     ),
                   ),
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  child: const Text(
-                    "Close",
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.white,
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.redAccent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    child: const Text(
+                      "Close",
+                      style: TextStyle(color: Colors.white),
                     ),
                   ),
-                ),
+                ],
               ),
             ],
           ),
@@ -353,76 +372,72 @@ class _MapScreenState extends State<MapScreen> {
           .get();
 
       setState(() {
-        if (markerSnapshot.docs.isEmpty) {
-          _markers = [];
-        } else {
-          _markers = markerSnapshot.docs.map((doc) {
-            final data = doc.data() as Map<String, dynamic>;
-            final markerData = MarkerData(
-              position: LatLng(data['latitude'], data['longitude']),
-              title: data['title'],
-              description: data['description'],
-            );
-
-            return Marker(
-              point: markerData.position,
-              width: 80,
-              height: 80,
-              child: GestureDetector(
-                onTap: () => _showMarkerInfo(markerData),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6.0,
-                        vertical: 4.0,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8.0),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black26,
-                            blurRadius: 4.0,
-                            offset: Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Text(
-                        markerData.title,
-                        style: const TextStyle(
-                          fontSize: 12.0,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
+        _markers.clear();
+        _markerData.clear();
+        _markers = markerSnapshot.docs.map((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          final markerData = MarkerData(
+            position: LatLng(data['latitude'], data['longitude']),
+            title: data['title'],
+            description: data['description'],
+          );
+          _markerData.add(markerData);
+          return Marker(
+            point: markerData.position,
+            width: 80,
+            height: 80,
+            child: GestureDetector(
+              onTap: () => _showMarkerInfo(markerData, doc.id),
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 4,
+                          offset: Offset(0, 2),
                         ),
+                      ],
+                    ),
+                    child: Text(
+                      markerData.title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
                       ),
                     ),
-                    const SizedBox(height: 4.0),
-                    Icon(
-                      Icons.location_on,
-                      color: Colors.red,
-                      size: 40,
-                    ),
-                  ],
-                ),
+                  ),
+                  const Icon(
+                    Icons.location_on,
+                    color: Colors.red,
+                    size: 40,
+                  ),
+                ],
               ),
-            );
-          }).toList();
-        }
+            ),
+          );
+        }).toList();
       });
     } catch (e) {
       print("Error loading markers: $e");
     }
   }
 
-  Future<void> _saveMarker(LatLng position, String title, String description) async {
+  Future<String?> _saveMarker(LatLng position, String title, String description) async {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
         throw Exception("User belum login");
       }
-      await FirebaseFirestore.instance
+
+      final docRef = await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
           .collection('markers')
@@ -433,13 +448,13 @@ class _MapScreenState extends State<MapScreen> {
         'description': description,
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Marker berhasil disimpan!')),
-      );
+      return docRef.id;
     } catch (e) {
+      print('Error saving marker: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Gagal menyimpan marker: $e')),
       );
+      return null;
     }
   }
 
@@ -486,6 +501,12 @@ class _MapScreenState extends State<MapScreen> {
     _searchController.addListener(() {
       _searchPlaces(_searchController.text);
     });
+    loadMarkers();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     loadMarkers();
   }
 
